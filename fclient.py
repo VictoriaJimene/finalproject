@@ -1,13 +1,9 @@
-import time
-import RPi.GPIO as GPIO
-import Adafruit_DHT
 import pandas as pd
 import requests
+import plotly.express as px
 from datetime import datetime
-
-# Constants for GPIO pins
-buzzer_pin = 13  # GPIO pin 13 is connected to the buzzer
-dht_pin = 4  # GPIO pin 4 for the DHT22 data pin
+import Adafruit_DHT
+import time
 
 # Initialize GPIO
 GPIO.setmode(GPIO.BOARD)
@@ -33,10 +29,9 @@ def read_temperature_humidity():
         return None, None
 
 def send_data_to_server(temp, hum):
-    payload = {'temperature': temp, 'humidity': hum}
-    url = "http://192.168.64.6:6000/sensor_data"  # Update with your VM's IP and port
+    url = "http://192.168.64.6:5000/sensor_data"  # Update with your server's IP and port
     try:
-        response = requests.post(url, json=payload)
+        response = requests.post(url, data={'Temperature': temp, 'Humidity': hum})  # Adjust payload keys to match server's expected keys
         if response.status_code == 200:
             print("Data sent successfully to the server.")
         else:
@@ -44,10 +39,13 @@ def send_data_to_server(temp, hum):
     except requests.exceptions.RequestException as e:
         print(f"Error sending data: {e}")
 
+def plot_temp_humidity(data):
+    fig = px.line(data, x='Time', y=['Temperature', 'Humidity'], title='Temperature and Humidity Over Time')
+    fig.show()
+
 def main():
-    global data
     try:
-        while True:  # Keep running indefinitely
+        while len(data) < 10:  # Collect 10 readings
             temp, hum = read_temperature_humidity()
             if temp is not None and hum is not None:
                 now = datetime.now()
@@ -57,6 +55,8 @@ def main():
                 send_data_to_server(temp, hum)
             buzz_buzzer()
             time.sleep(20)  # Interval of 20 seconds
+
+        plot_temp_humidity(data)
 
     except KeyboardInterrupt:
         print("Stopped by User")
