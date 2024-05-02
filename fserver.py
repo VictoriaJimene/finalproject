@@ -1,22 +1,26 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
+# Data storage using pandas DataFrame
+data = pd.DataFrame(columns=['Time', 'Temperature', 'Humidity'])
+
 # A route to accept data from the Raspberry Pi sensor
 @app.route('/sensor_data', methods=['POST'])
-def sensor_data():
+def receive_sensor_data():
     if request.method == 'POST':
-        # Try to extract temperature and humidity from the received JSON
-        data = request.get_json()
-        if data is not None:
-            temperature = data.get('Temperature')
-            humidity = data.get('Humidity')
-            # Optionally, process or store the received data here
+        global data
+        temperature = request.form.get('Temperature')
+        humidity = request.form.get('Humidity')
+        if temperature is not None and humidity is not None:
+            now = datetime.now()
+            new_row = {'Time': now, 'Temperature': temperature, 'Humidity': humidity}
+            data = data.append(new_row, ignore_index=True)
             print(f"Received temperature: {temperature} C, humidity: {humidity} %")
             return "Data received successfully", 200
         else:
             return "No data received", 400
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=6000)
+    app.run(host='0.0.0.0', port=5000)
 
