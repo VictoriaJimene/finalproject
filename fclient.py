@@ -43,7 +43,7 @@ try:
             print(f"Recorded at {now}: Temperature: {temp} C, Humidity: {hum} %")
             # Prepare the data to send
             payload = {'Temperature': temp, 'Humidity': hum}  # Use form data format
-            url = "http://192.168.64.6:6000/sensor_data"
+            url = "http://172.20.10.12:6000/sensor_data"
             try:
                 response = requests.post(url, data=payload)
                 if response.status_code == 200:
