@@ -45,6 +45,7 @@ def send_data_to_server(temp, hum):
         print(f"Error sending data: {e}")
 
 def main():
+    global data
     try:
         while True:  # Keep running indefinitely
             temp, hum = read_temperature_humidity()
