@@ -2,9 +2,8 @@ import time
 import RPi.GPIO as GPIO
 import Adafruit_DHT
 import pandas as pd
-import plotly.express as px
+import requests
 from datetime import datetime
-import requests 
 
 # Constants for GPIO pins
 buzzer_pin = 13  # GPIO pin 13 is connected to the buzzer
@@ -33,38 +32,35 @@ def read_temperature_humidity():
         print("Failed to get reading from the humidity and temperature sensor.")
         return None, None
 
-try:
-    while len(data) < 10:  # Modify this number based on how many data points you want to collect
-        temp, hum = read_temperature_humidity()
-        if temp is not None and hum is not None:
-            now = datetime.now()
-            new_row = {'Time': now, 'Temperature': temp, 'Humidity': hum}
-            data = data.append(new_row, ignore_index=True)
-            print(f"Recorded at {now}: Temperature: {temp} C, Humidity: {hum} %")
-            # Prepare the data to send
-            payload = {'Temperature': temp, 'Humidity': hum}  # Use form data format
-            url = "http://172.20.10.12:6000/sensor_data"
-            try:
-                response = requests.post(url, data=payload)
-                if response.status_code == 200:
-                    print("Data sent successfully to the server.")
-                else:
-                    print("Failed to send data to the server.")
-            except requests.exceptions.RequestException as e:
-                print(f"Error sending data: {e}")
-        buzz_buzzer()
-        time.sleep(20)  # Interval of 20 seconds
+def send_data_to_server(temp, hum):
+    url = "http://192.168.64.6:6000/sensor_data"  # Update with your server's IP and port
+    payload = {'Temperature': temp, 'Humidity': hum}
+    try:
+        response = requests.post(url, data=payload)
+        if response.status_code == 200:
+            print("Data sent successfully to the server.")
+        else:
+            print("Failed to send data to the server.")
+    except requests.exceptions.RequestException as e:
+        print(f"Error sending data: {e}")
 
-    # Plotting using Plotly
-    fig = px.line(data, x='Time', y='Temperature', title='Temperature Over Time', labels={'Temperature': 'Temperature (C)'})
-    fig.add_scatter(x=data['Time'], y=data['Humidity'], name='Humidity', mode='lines')
+def main():
+    try:
+        while True:
+            temp, hum = read_temperature_humidity()
+            if temp is not None and hum is not None:
+                now = datetime.now()
+                new_row = {'Time': now, 'Temperature': temp, 'Humidity': hum}
+                data = data.append(new_row, ignore_index=True)
+                print(f"Recorded at {now}: Temperature: {temp} C, Humidity: {hum} %")
+                send_data_to_server(temp, hum)
+            buzz_buzzer()
+            time.sleep(20)  # Interval of 20 seconds
+    except KeyboardInterrupt:
+        print("Stopped by User")
+    finally:
+        GPIO.cleanup()
 
-    # Save the plot
-    fig.write_image("/Downloads/Temp_Sensor_Graph.png")
-    fig.show()
-
-except KeyboardInterrupt:
-    print("Stopped by User")
-finally:
-    GPIO.cleanup()
+if __name__ == "__main__":
+    main()
 
