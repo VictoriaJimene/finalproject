@@ -1,6 +1,4 @@
-from flask import Flask, request
-import pandas as pd 
-from datetime import datetime 
+from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
@@ -11,8 +9,7 @@ data = pd.DataFrame(columns=['Time', 'Temperature', 'Humidity'])
 @app.route('/sensor_data', methods=['POST'])
 def receive_sensor_data():
     if request.method == 'POST':
-        global data
-        temperature = request.form.get('Temperature')
+        temperature = request.form.get('Temperature')  # Extract form data
         humidity = request.form.get('Humidity')
         if temperature is not None and humidity is not None:
             now = datetime.now()
@@ -24,5 +21,6 @@ def receive_sensor_data():
             return "No data received", 400
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=6000)
+
 
